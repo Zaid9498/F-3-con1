@@ -1,97 +1,72 @@
-let API_KEY = "";
-let SEARCH_TERM = "";
 
-const searchButtonElement = document.getElementById("search");
+let searchBox = document.getElementById("search");
+let container = document.getElementById("movie-list");
+let loader = document.getElementById("loader");
+let apiKey = "31f6d050";
 
-searchButtonElement.addEventListener("click", () => {
-  let apikeyValue = document.getElementById("api-key").value;
-  let searchValue = document.getElementById("search-box").value;
-  console.log(apikeyValue);
-  if (apikeyValue !== "") {
-    API_KEY = apikeyValue;
-  } else {
-    alert("Please enter valid API");
-  }
-  if (searchValue.length < 3) {
-    document.querySelector(".warning").innerHTML = "";
-    const warning = document.querySelector(".warning");
-    warning.innerText = "Search term should be at least of 3 characters";
-  } else {
-    SEARCH_TERM = searchValue;
-  }
-  if (apikeyValue !== "" && searchValue.length >= 3) {
-    fetchData();
-  }
-});
+async function loadMovies(searchInput, api) {
+  check();
+  let search = "indian";
+  let apiKey = document.getElementById("api").value;
+  const res = await fetch(
+    `https://www.omdbapi.com/?apikey=${!api ? apiKey : api}&s=${
+      !searchInput ? search : searchInput
+    }`
+  )
+    .then(async (res) => {
+      const data = await res.json();
 
-async function fetchData() {
-  document.querySelector(".cards-container").innerHTML = "";
-  let number = 0;
-  const endPoint = `https://www.omdbapi.com/?s=${SEARCH_TERM}&apikey=${API_KEY}`;
-  document.querySelector(".cards-container").style.display = "none";
-  try {
-    document.querySelector(".spinner-container").style.display = "flex";
-    const response = await fetch(endPoint);
-    const result = await response.json();
-    try {
-      console.log(result.Error);
-      if (result.Error === "Invalid API key!") {
-        const warningContainer = document.createElement("p");
-        warningContainer.className = "api-failed";
-        warningContainer.innerText =
-          "You have entered incorrect API \uD83D\uDE13";
-        document.querySelector(
-        ".cards-container"
-        ).style.display = "flex";
-        document.querySelector(".spinner-container").style.display = "none";
-        document.querySelector(".cards-container").appendChild(warningContainer);
-        console.log("executed!");
-        return;
-      }else if (result.Error === "Movie not found!") {
-        const warningContainer = document.createElement("p");
-        warningContainer.className = "api-failed";
-        warningContainer.innerText =
-          "Movie Not Found \uD83D\uDE13";
-        document.querySelector(".cards-container").style.display = "flex";
-        document.querySelector(".spinner-container").style.display = "none";
-        document
-          .querySelector(".cards-container")
-          .appendChild(warningContainer);
-        console.log("executed!");
+      if (data.Response === "True") {
+        for (let i = 0; i < data.Search.length; i++) {
+          makeCard(data.Search[i], i);
+        }
+      } else {
+        document.getElementById("loader").classList.remove("hide");
       }
-    } catch (error) {console.log(error)}
-    console.log(result);
-    console.log(result.Search);
-    result.Search.forEach((element) => {
-      const card = document.createElement("div");
-      card.className = "card";
-      if (element.Poster === "N/A"){
-        card.innerHTML = `<img src="movie-1.png" id="image-title" alt=""> 
-            <div class="details">
-                <p id="number">${(number = number + 1)}</p>
-                <p id="movie-name">
-                    ${element.Title}
-                </p>
-            </div>
-                `;
-      }else{
-                card.innerHTML = `<img src="${
-                  element.Poster
-                }" id="image-title" alt=""> 
-            <div class="details">
-                <p id="number">${(number = number + 1)}</p>
-                <p id="movie-name">
-                    ${element.Title}
-                </p>
-            </div>
-                `;
-      }
-
-      document.querySelector(".cards-container").appendChild(card);
+    })
+    .catch(() => {
+      document.getElementById("error").classList.remove("hide");
     });
-    document.querySelector(".spinner-container").style.display = "none";
-    document.querySelector(".cards-container").style.display = "flex";
-  } catch (error) {
-    console.log(error);
+}
+function check() {
+  if (container !== null) {
+    document.getElementById("loader").classList.add("hide");
   }
+}
+function findMovies() {
+  let search = searchBox.value;
+  let apiKey = document.getElementById("api").value;
+  document.getElementById("error").classList.add("hide");
+  if (search.length > 0) {
+    container.innerHTML = null;
+
+    loadMovies(search, apiKey);
+    if (container !== null)
+      document.getElementById("loader").classList.add("hide");
+  }
+}
+function makeCard(data, i) {
+  const card = document.createElement("div");
+  card.className = "movie-card";
+  let myCard = `
+      <div class="movie-card" target="_blank" id="movie-card" onclick="location.href = 'https://www.imdb.com/title/${
+        data.imdbID
+      }'"
+      }
+      }" >
+        <img
+          src="${
+            data.Poster === "N/A"
+              ? `https://cdn.vectorstock.com/i/preview-1x/82/99/no-image-available-like-missing-picture-vector-43938299.jpg`
+              : data.Poster
+          }"
+          alt="Poster"
+        />
+        <div class="name">
+          <div class="index">${i + 1}</div>
+          <div class="title">${data.Title}</div>
+        </div>
+      </div>`;
+  card.innerHTML = myCard;
+  container.appendChild(card);
 }
